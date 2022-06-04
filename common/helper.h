@@ -5,12 +5,12 @@ char * read_str(int socket);
 
 int read_int(int socket);
 
-int read_file(int socket, char * file);
+int read_file(int socket, char * filepath);
 
 int write_str(int socket, char * data);
 
 int write_int(int socket, int data);
 
-int write_file(int socket, char * file);
+int write_file(int socket, char* filepath, char * filename);
 
 #endif

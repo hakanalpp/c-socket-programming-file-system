@@ -51,6 +51,9 @@ int read_data() {
         if (strcmp(mes, "INPUT2\0") == 0) {
             return 3;
         }
+        if (strcmp(mes, "INFO01\0") == 0) {
+            return 4;
+        }
         return 0;
     }
     return -1;
@@ -86,6 +89,9 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
+    char current_path[MAXBUF];
+    getcwd(current_path, sizeof(current_path));
+
     int res_type = 0;
     char * input = malloc(sizeof (char) * MAXBUF);
     int num;
@@ -118,7 +124,10 @@ int main(int argc, char* argv[]) {
         if (res_type == 3) {
             printf("$ \0");
             scanf("%s", input);
-            write_file(sockd, input);
+            write_file(sockd, current_path, input);
+        }
+        if (res_type == 4) {
+            read_file(sockd, current_path);
         }
     }
 

@@ -46,11 +46,15 @@ int read_int(int socket) {
 
 int read_file(int socket, char * filepath) {
     char buf[MAXBUF];
+    char filename[MAXSTRING];
     int counter;
-    // sprintf(buf, "%s/root/%s/%s\0", path, username, filename);
-    printf("%s \n", filepath);
-    
-    int fd = open(filepath, O_WRONLY | O_CREAT | O_APPEND, 0666);
+
+    strcpy(filename, read_str(socket));
+    sprintf(buf, "%s/%s\0", filepath, filename);
+
+    printf("Downloading '%s' \n", buf);
+
+    int fd = open(buf, O_WRONLY | O_CREAT | O_APPEND, 0666);
 
     if (fd == -1) {
         fprintf(stderr, "Could not open destination file, using stdout.\n");
@@ -93,35 +97,32 @@ int write_int(int socket, int data) {
 int is_filename_safe(char* path) {
     if (strstr(path, "..")) return 0;
     if (path[1] == 0 && path[0] == '.') return 0;
-    if (path[0] == '/') return 0;
 
     const char* c = path;
-    while (*c != 0) {
-        if (!isalnum(*c) && *c != '.' && *c != '/') return 0;
-        ++c;
-    }
     if (*(c-1) == '/') return 0;
 
     return 1;
 }
 
 
-int write_file(int socket, char * filepath) {
+int write_file(int socket, char* filepath, char * filename) {
     char * bufptr;
     char buf[MAXBUF];
+    
+    sprintf(buf, "%s/%s\0", filepath, filename);
 
-    if (!is_filename_safe(filepath)) {
-        fprintf(stderr, "Filename is invalid! %s\n", filepath);
+    if (!is_filename_safe(buf)) {
+        fprintf(stderr, "Filename is invalid! '%s'\n", buf);
         write(socket, "ERROR: Filename is invalid!\n", 29);
         return -1;
     }
 
-    printf("Uploading '%s'\n", filepath);
+    printf("Writing '%s'\n", buf);
 
-    write_str(socket, filepath);
+    write_str(socket, filename);
     
     /* open the file for reading */
-    int fd = open(filepath, O_RDONLY);
+    int fd = open(buf, O_RDONLY);
 
     if (fd == -1) {
         fprintf(stderr, "Could not open file for reading!\n");

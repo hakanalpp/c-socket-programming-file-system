@@ -88,7 +88,6 @@ void process_client(int socket2, char *current_path) {
     int option;
     int file_number;
     char buf[MAXBUF];
-    char buf2[MAXBUF];
     char username[MAXBUF];
     char password[MAXBUF];
 
@@ -162,10 +161,9 @@ void process_client(int socket2, char *current_path) {
 
         if (file_number == 0) {
             write(socket2, "INPUT2-Please enter a file name.\n", 34);
-            strcpy(buf, read_str(socket2));
-            sprintf(buf2, "%s/root/%s/%s\0", current_path, username, buf); // TO DO suspicious recopy.
-            read_file(socket2, buf2);
-            return;
+            sprintf(buf, "%s/root/%s/\0", current_path, username);
+            read_file(socket2, buf);
+            continue;
         }
 
         write(socket2, "INPUT0-Please choose one below:\n0. Exit\n1. Download\n2. Delete\n", 63);
@@ -185,8 +183,13 @@ void process_client(int socket2, char *current_path) {
         }
 
         if (file_option == 1) {
-            write(socket2, "INFO00-Download.\n", 18);
+            sprintf(buf, "INFO01-\n", arr[file_number - 1]);
+            write_str(socket2, buf);
+            sprintf(buf, "%s/root/%s", current_path, username);
+            write_file(socket2, buf, arr[file_number - 1]);
+            continue;
         }
+
         else if (file_option == 2) {
             strcpy(buf, "");
             sprintf(buf, "%s/root/%s/%s\0", current_path, username, arr[file_number - 1]);
@@ -248,7 +251,7 @@ int main() {
         mkdir("root", 0700);
     }
 
-    char current_path[PATH_MAX];
+    char current_path[MAXBUF];
     getcwd(current_path, sizeof(current_path));
 
     while (1)
