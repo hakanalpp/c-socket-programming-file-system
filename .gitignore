@@ -1,0 +1,9 @@
+server/*
+client/*
+!server/root
+server/root/*
+!server/root/.gitkeep
+!client/client.c
+!server/server.c
+test.c
+test

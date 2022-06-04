@@ -1,0 +1,1 @@
+cd client; rm -rf client; clear; gcc client.c ../common/helper.c -o client; ./client

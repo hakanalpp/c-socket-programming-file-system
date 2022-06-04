@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "socket.h": "c",
+        "compare": "c",
+        "type_traits": "c",
+        "fcntl.h": "c",
+        "helper.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
