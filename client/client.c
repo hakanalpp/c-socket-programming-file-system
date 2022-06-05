@@ -1,18 +1,11 @@
 // Hakan Alp - 250201056
 
-/* File transfer client */
-
-#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <string.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+
 
 #include "../common/helper.h"
 
@@ -20,23 +13,15 @@
 #define MAXBUF 1024
 
 int counter;
-int sockd;
+int socket1;
 char buf[MAXBUF];
 int fd;
 int returnStatus;
 
 
-void chop_n_chars(char *str, size_t n)
-{
-    size_t len = strlen(str);
-    if (n > len)
-        return;  // Or: n = len;
-    memmove(str, str+n, len - n + 1);
-}
-
 int read_data() {
     // Read as long as there is data
-    while ((counter = read(sockd, buf, MAXBUF)) > 0) {
+    while ((counter = read(socket1, buf, MAXBUF)) > 0) {
         char mes[7];
         strncpy(mes, buf, 6);
         chop_n_chars(buf, 7);
@@ -61,28 +46,24 @@ int read_data() {
 
 
 int main(int argc, char* argv[]) {
-    struct sockaddr_in xferServer;
-    // if (argc < 3) {
-    //     fprintf(stderr, "Usage: %s <ip address> <filename> [dest filename]\n", argv[0]);
-    //     exit(1);
-    // }
+    struct sockaddr_in server;
 
     /* create a socket */
-    sockd = socket(AF_INET, SOCK_STREAM, 0);
+    socket1 = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (sockd == -1) {
+    if (socket1 == -1) {
         fprintf(stderr, "Could not create socket!\n");
         exit(1);
     }
 
     /* set up the server information */
-    xferServer.sin_family = AF_INET;
-    xferServer.sin_addr.s_addr = inet_addr("127.0.0.1");
-    xferServer.sin_port = htons(SERVERPORT);
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_port = htons(SERVERPORT);
 
     /* connect to the server */
     returnStatus =
-        connect(sockd, (struct sockaddr*)&xferServer, sizeof(xferServer));
+        connect(socket1, (struct sockaddr*)&server, sizeof(server));
 
     if (returnStatus == -1) {
         fprintf(stderr, "Could not connect to server!\n");
@@ -98,6 +79,7 @@ int main(int argc, char* argv[]) {
     char term;
     while(1) {
         res_type = read_data();
+
         if (res_type == -1) {
             break;
         }
@@ -105,7 +87,7 @@ int main(int argc, char* argv[]) {
         if (res_type == 2) {
             printf("$ \0");
             scanf("%s", input);
-            write_str(sockd, input);
+            write_str(socket1, input);
         }
         if (res_type == 1) {
             int num;
@@ -119,18 +101,18 @@ int main(int argc, char* argv[]) {
                 } else
                     break;
             }
-            write_int(sockd, num);
+            write_int(socket1, num);
         }
         if (res_type == 3) {
             printf("$ \0");
             scanf("%s", input);
-            write_file(sockd, current_path, input);
+            write_file(socket1, current_path, input);
         }
         if (res_type == 4) {
-            read_file(sockd, current_path);
+            read_file(socket1, current_path);
         }
     }
 
-    close(sockd);
+    close(socket1);
     return 0;
 }

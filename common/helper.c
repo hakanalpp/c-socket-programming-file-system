@@ -1,19 +1,26 @@
+// Hakan Alp - 250201056
+
 #include <fcntl.h>
-#include <netdb.h>
 #include <sys/stat.h>
 #include <stdio.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <dirent.h>
 
 #define MAXBUF 1024
 #define MAXSTRING 128
 
 int i, readCounter, writeCounter;
+
+/* Gathered from https://stackoverflow.com/a/4761840/11107343 */
+void chop_n_chars(char *str, size_t n)
+{
+    size_t len = strlen(str);
+    if (n > len)
+        return;  // Or: n = len;
+    memmove(str, str+n, len - n + 1);
+}
+
 
 char * read_str(int socket) {
     char *response = malloc(sizeof(char) * MAXBUF);
@@ -50,23 +57,28 @@ int read_file(int socket, char * filepath) {
     int counter;
 
     strcpy(filename, read_str(socket));
+    if (strncmp(filename, "ERROR", 5) == 0) {
+        chop_n_chars(filename, 7);
+        printf("%s \n", filename);
+        return -1;
+    }
+
     sprintf(buf, "%s/%s\0", filepath, filename);
 
     printf("Downloading '%s' \n", buf);
 
-    int fd = open(buf, O_WRONLY | O_CREAT | O_APPEND, 0666);
+    remove(buf);
+    FILE *file = fopen(buf, "w+");
 
-    if (fd == -1) {
+    if (file == NULL) {
         fprintf(stderr, "Could not open destination file, using stdout.\n");
         return -1;
     }
 
-    /* read the file from the socket as long as there is data */
-    while ((counter = read(socket, buf, MAXBUF)) > 0) {
-        /* send the contents to stdout */
-        write(fd, buf, counter);
-    }
-
+    read(socket, buf, MAXBUF);
+    fprintf(file, buf);
+    
+    fclose(file);
     if (counter == -1) {
         fprintf(stderr, "Could not read file from socket!\n");
         return -1;
@@ -113,41 +125,33 @@ int write_file(int socket, char* filepath, char * filename) {
 
     if (!is_filename_safe(buf)) {
         fprintf(stderr, "Filename is invalid! '%s'\n", buf);
-        write(socket, "ERROR: Filename is invalid!\n", 29);
+        write_str(socket, "ERROR0-Filename is invalid!\n");
         return -1;
     }
 
-    printf("Writing '%s'\n", buf);
+    printf("Reading '%s'\n", buf);
 
-    write_str(socket, filename);
     
     /* open the file for reading */
-    int fd = open(buf, O_RDONLY);
+    FILE *file = fopen(buf, "r");
 
-    if (fd == -1) {
+    if (file == NULL) {
         fprintf(stderr, "Could not open file for reading!\n");
-        write(socket, "ERROR: Could not open file for reading!\n", 41);
+        write_str(socket, "ERROR0-Could not open file for reading!\n");
         return -1;
     }
+    write_str(socket, filename);
 
-    /* reset the read counter */
-    int readCounter, writeCounter = 0;
 
-    /* read the file, and send it to the client in chunks of size MAXBUF */
-    while ((readCounter = read(fd, buf, MAXBUF)) > 0) {
-        writeCounter = 0;
-        bufptr = buf;
+    fseek(file, 0, SEEK_END);
+    long fsize = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-        while (writeCounter < readCounter) {
-            readCounter -= writeCounter;
-            bufptr += writeCounter;
-            writeCounter = write(socket, bufptr, readCounter);
+    fread(buf, fsize, 1, file);
+    fclose(file);
 
-            if (writeCounter == -1) {
-                fprintf(stderr, "Could not write file to client!\n");
-                return -1;
-            }
-        }
-    }
+    buf[fsize] = '\0';
+
+    write(socket, buf, fsize+1);
     return 1;
 }

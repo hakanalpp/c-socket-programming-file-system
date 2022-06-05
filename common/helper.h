@@ -13,4 +13,6 @@ int write_int(int socket, int data);
 
 int write_file(int socket, char* filepath, char * filename);
 
+void chop_n_chars(char *str, size_t n);
+
 #endif

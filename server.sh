@@ -1,1 +1,1 @@
-cd server; rm -rf server; clear; gcc server.c ../common/helper.c -o server -lssl -lcrypto && sudo ./server
+cd server; rm -rf server; clear; gcc server.c helper/server_helper.c ../common/helper.c -o server -lssl -lcrypto && ./server
