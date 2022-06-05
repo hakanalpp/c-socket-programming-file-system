@@ -1,5 +1,6 @@
 server/*
 client/*
+!server/helper
 !server/root
 server/root/*
 !server/root/.gitkeep

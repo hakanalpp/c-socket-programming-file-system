@@ -87,6 +87,7 @@ int main(int argc, char* argv[]) {
         if (res_type == 2) {
             printf("$ \0");
             scanf("%s", input);
+            printf("\n");
             write_str(socket1, input);
         }
         if (res_type == 1) {
@@ -101,11 +102,13 @@ int main(int argc, char* argv[]) {
                 } else
                     break;
             }
+            printf("\n");
             write_int(socket1, num);
         }
         if (res_type == 3) {
             printf("$ \0");
             scanf("%s", input);
+            printf("\n");
             write_file(socket1, current_path, input);
         }
         if (res_type == 4) {

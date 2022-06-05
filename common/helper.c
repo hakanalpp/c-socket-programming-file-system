@@ -29,7 +29,6 @@ char * read_str(int socket) {
 
     if (readCounter == -1) {
         fprintf(stderr, "Could not read string data from socket!\n");
-        close(socket);
     }
 
     return response;
@@ -41,10 +40,8 @@ int read_int(int socket) {
 
     int readCounter = read(socket, &response, sizeof(int));
 
-    if (readCounter == -1)
-    {
+    if (readCounter == -1) {
         fprintf(stderr, "Could not read int data from socket!\n");
-        close(socket);
     }
 
     return response;
@@ -54,9 +51,11 @@ int read_int(int socket) {
 int read_file(int socket, char * filepath) {
     char buf[MAXBUF];
     char filename[MAXSTRING];
-    int counter;
 
     strcpy(filename, read_str(socket));
+
+    if (strcmp(filename, "") == 0) return -1;
+
     if (strncmp(filename, "ERROR", 5) == 0) {
         chop_n_chars(filename, 7);
         printf("%s \n", filename);
@@ -64,8 +63,6 @@ int read_file(int socket, char * filepath) {
     }
 
     sprintf(buf, "%s/%s\0", filepath, filename);
-
-    printf("Downloading '%s' \n", buf);
 
     remove(buf);
     FILE *file = fopen(buf, "w+");
@@ -75,14 +72,18 @@ int read_file(int socket, char * filepath) {
         return -1;
     }
 
-    read(socket, buf, MAXBUF);
-    fprintf(file, buf);
+    printf("Downloading '%s'.\n\n", filename);
     
-    fclose(file);
-    if (counter == -1) {
-        fprintf(stderr, "Could not read file from socket!\n");
-        return -1;
+    int counter = read(socket, buf, MAXBUF);
+
+    if (strstr(filename, ".png")) {
+        int fildes = fileno(file);
+        write(fildes, buf, counter);
+    } else {
+        fprintf(file, buf);
     }
+
+    fclose(file);
 }
 
 
@@ -129,25 +130,24 @@ int write_file(int socket, char* filepath, char * filename) {
         return -1;
     }
 
-    printf("Reading '%s'\n", buf);
-
-    
     /* open the file for reading */
-    FILE *file = fopen(buf, "r");
+    FILE *file = fopen(buf, "rb");
 
     if (file == NULL) {
         fprintf(stderr, "Could not open file for reading!\n");
-        write_str(socket, "ERROR0-Could not open file for reading!\n");
+        write_str(socket, "ERROR0-There is no file with this name!\n");
         return -1;
     }
-    write_str(socket, filename);
 
+    printf("Uploading '%s'.\n\n", filename);
+
+    write_str(socket, filename);
 
     fseek(file, 0, SEEK_END);
     long fsize = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    fread(buf, fsize, 1, file);
+    fread(buf, fsize, 1, file);    
     fclose(file);
 
     buf[fsize] = '\0';
